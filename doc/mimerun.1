@@ -1,0 +1,54 @@
+.TH MIMERUN "1" "2015-09-25" "mimerun 0.9" "User Commands"
+.SH NAME
+mimerun - mail and mbox parser and dumper
+.SH SYNOPSIS
+.B mimerun
+[-v] [-h] [-s] [-d] [-o folder to unpack] files...
+.SH DESCRIPTION
+.PP
+Command line tool to unpack or convert mail message from MIME and MBOX formats.
+.br
+Head fields and body parts are decoded and converted to UTF-8 and stored as separated files.
+.TP
+\fB\-h\fR
+Print help message
+.TP
+\fB\-s\fR
+Silency, only minimal output on errors
+.TP
+\fB\-v\fR
+Print version number
+.TP
+\fB\-d\fR
+Output mode - directory dump (only one mode exists now)
+.TP
+\fB\-o\fR
+Output file or folder
+.TP
+\fBfiles\fR
+File with MIME or MBOX formatted content
+.SH "NOTES"
+.IX Header "NOTES"
+This program designed for high speed mail processing, it written completely in C (gcc dialect).
+.SH "BUGS AND LIMITATIONS"
+.IX Header "BUGS AND LIMITATIONS"
+MBOX files produced by gmail export have incorrect date format in MBOX header, so timestamp will be parsed incorrectly.
+.PP
+Please report any bugs or feature requests to
+<https://github.com/dimal/mimerun/issues>.
+.SH EXAMPLE
+$ # Using the default directory dump mode to outfolder, parse mbox file, no errors displayed.
+.br
+$ ./mimerun -s -o outfolder mbox
+.br
+.SH "SEE ALSO"
+.IX Header "SEE ALSO"
+mimerun(3)
+.SH "LICENSE AND COPYRIGHT"
+.IX Header "LICENSE AND COPYRIGHT"
+Copyright 2015 Dmitry Lobashevsky.
+.PP
+This program is free software; you can redistribute it and/or modify it
+under the terms of BSD 3-Clause License.
+.br
+Full text of license can be found at <https://opensource.org/licenses/BSD-3-Clause>

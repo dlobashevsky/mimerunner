@@ -1,0 +1,205 @@
+
+// $Id$
+
+
+#define YYCTYPE		uint8_t
+#define YYLIMIT		last
+#define YYFILL(n)	break;
+#define YYCURSOR	p
+#define YYMARKER	q
+#define YYCTXMARKER	ctx
+
+
+// By standard date part should be exact 24 symbols, but google mbox violate this by add timezone before year part
+// So for parse strict MBOX/OMBOX files line
+// FULLDATE = SHORTWD WS SHORTMON WS FDIGIT DIGIT ? WS TIME WS ([^ \r\n\t\f] WS)? FDIGIT DIGIT DIGIT DIGIT;
+// may be changed to
+// FULLDATE = SHORTWD WS SHORTMON WS FDIGIT DIGIT ? WS TIME WS FDIGIT DIGIT DIGIT DIGIT;
+
+//    FULLDATE = SHORTWD WS SHORTMON WS ( (FDIGIT DIGIT) | (WS FDIGIT) ) WS TIME WS ( [^ \r\n\t\f]+ WS ) ? FDIGIT DIGIT DIGIT DIGIT;
+
+
+/*!re2c
+    NL = "\r" ? "\n" ;
+    DNL = NL NL ;
+    WS = [ \t]+ ;
+    DIV = WS* ":" WS* ;
+
+    SHORTWD = "Sun" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" ;
+    SHORTMON = "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec" ;
+
+    DIGIT = [0-9] ;
+    FDIGIT = [1-9] ;
+
+    TIME = DIGIT DIGIT ":" DIGIT DIGIT ":" DIGIT DIGIT ;
+
+    FULLDATE = SHORTWD WS SHORTMON WS ( (DIGIT DIGIT) | (WS FDIGIT) ) WS TIME WS+ ( [^ \r\n\t\f]+ WS+ ) ? FDIGIT DIGIT DIGIT DIGIT;
+
+    FIELDNAME = [A-Za-z0-9_+\.\-] + ;
+    FIELDVAL = [^;\n\r] * ;
+
+    LINE = [^\n\r] * ;
+*/
+
+
+
+static void mimeinc_optheader_populate(const uint8_t* data,ssize_t sz,mime_t* fill,mime_tmp_t* mtmp)
+{
+  const uint8_t* l=memchr(data,' ',sz);
+  if(!l) return;
+
+  {
+    ssize_t msz=narrow_right(data,l-data);
+    if(msz>0)
+    {
+      fill->head.addr=fill->csz;
+      add_chunk(fill,mtmp,data,msz);
+    }
+  }
+
+  while((*l==' ' || *l=='\t') && l<data+sz) l++;
+  if(l+12>=data+sz)  return;
+
+  sz-=(l-data);
+  data=l;
+
+  ssize_t tsz=narrow_right(data,sz);
+
+  size_t u=narrow_left(data,tsz);tsz-=u;
+
+  fill->head.time=fill->csz;
+  add_chunk(fill,mtmp,data+u,tsz);
+
+  fill->head.date=mime_time("%a %b %e %T %Y",data+u,tsz);
+// for gmail:  fill->head.date=mime_time("%a %b %e %T %z %Y",data+u,tsz);
+}
+
+
+
+//! optional header detect
+static ssize_t mimeinc_optheader_detect(const uint8_t* data,size_t sz)
+{
+  if(!data || !sz)  return -1;
+
+  const uint8_t* p=data;
+  const uint8_t* last=p+sz-1;
+  const uint8_t* q=0;
+
+  do
+  {
+/*!re2c
+  "From" WS+ .* WS+ FULLDATE NL	{ return p-data; }
+  * { return 0;}
+*/
+  } while(0);
+
+  return 0;
+}
+
+//! optional header fill
+static ssize_t mimeinc_optheader(const uint8_t* data,size_t sz,mime_t* fill,mime_tmp_t* mtmp)
+{
+  if(!data || !sz || !fill || !mtmp)  return -1;
+
+  fill->head.addr=-1;
+
+  const uint8_t* p=data;
+  const uint8_t* last=p+sz-1;
+  const uint8_t* q=0;
+
+  do
+  {
+/*!re2c
+  "From" WS+ .* WS+ FULLDATE NL	{   mimeinc_optheader_populate(data+5,p-data-5,fill,mtmp);   return p-data;  }
+  * { return 0;}
+*/
+  } while(0);
+
+  return 0;
+}
+
+//! header parse
+static ssize_t mimeinc_header(const uint8_t* data,size_t sz,mime_t* fill,mime_part_t* head,mime_tmp_t* mtmp)
+{
+  if(!data || !sz || !fill || !mtmp || !head)  return -1;
+
+  const uint8_t* p=data;
+  const uint8_t* last=p+sz-1;
+  const uint8_t* q=0;
+  const uint8_t* ctx=0;
+  const uint8_t* lq=0;
+  
+  for(size_t i=0;i<sizeof(mtmp->ss)/sizeof(mtmp->ss[0]);i++)
+    mtmp->ss[i]=0;
+
+  ssize_t ret=sz;
+
+  while(p<=last)
+  {
+//TODO: change last behavior to accurate error reporting and backtracking
+/*!re2c
+    FIELDNAME WS * ":" WS * LINE NL ( WS + LINE NL ) * / [^\t ] 	{ lq=q; field_parse(q-1,p-q+1,fill,head,mtmp); continue; }
+    NL 		{ ret=p-data; break; }
+    * 		{  
+                   if(mtmp->gflags&MIME_FLAG_VERBOSE) 
+                   {
+                     fprintf(stderr,"%s: field ",mtmp->label);
+                     if(q && q<last)  fprintf(stderr,"%.*s\n",(q+16)<=last ? 16 : (int)(last-q+1), q-1);
+                     else  fprintf(stderr,"empty\n");
+                   }
+                   lq=q; ret=-1; head->err|=MIME_ERROR_PARSE; break;
+                }
+*/
+  }
+
+  if(q && lq!=q && --q<=last)
+  {
+    field_parse(q,p-q,fill,head,mtmp);
+  }
+  if(mtmp->ss[0])
+  {
+    head->boundary=fill->csz;
+    add_chunk(fill,mtmp,mtmp->store[0],mtmp->ss[0]);
+  }
+
+  if(mtmp->ss[1])
+  {
+    head->charset_text=fill->csz;
+    add_chunk(fill,mtmp,mtmp->store[1],mtmp->ss[1]);
+    const struct mime_hash_t* h=mime_cs(mtmp->store[1],mtmp->ss[1]); 
+    if(h) head->charset=h->idx;
+  }
+
+  return ret;
+}
+
+
+static void temp_store(mime_tmp_t* mtmp,size_t u,const uint8_t* ptr,size_t s)
+{
+  if(mtmp->as[u]<s+1)
+  {
+    mtmp->as[u]=s+1;
+    md_free(mtmp->store[u]);
+    mtmp->store[u]=md_malloc(s+1);
+  }
+  memcpy(mtmp->store[u],ptr,s);
+  mtmp->ss[u]=s;
+  mtmp->store[u][s]=0;
+}
+
+static void field_content(mime_t* fill,mime_part_t* head,mime_tmp_t* mtmp,const uint8_t* data,size_t sz)
+{
+  const uint8_t* p=data;
+  const uint8_t* last=p+sz-1;
+  const uint8_t* q=0;
+
+  do
+  {
+/*!re2c
+  WS* 'boundary' WS* "=" WS* { if(*p=='"') { p++;sz--;} sz-=(p-data); temp_store(mtmp,0,p,sz); return; }
+  WS* 'charset' WS* "=" WS* { if(*p=='"') { p++;sz--;} sz-=(p-data); temp_store(mtmp,1,p,sz);  return; }
+  * { return;}
+*/
+  } while(0);
+}
+
