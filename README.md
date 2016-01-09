@@ -1,11 +1,13 @@
 # mimerunner
 MIMErunner is a simple Linux application and library designed for fast unpacking and decoding of email messages and mailboxes.
-MIMErunner decode all parts of messages and convert them to utf-8.
+MIMErunner decode all parts of message and convert them to utf-8.
 Initially MIMErunner was written as part of gigascale spam detection and email mining project.
 This code probable not portable and was designed for x86_64 architectures with heavy usage of gcc-specific features.
 Also MIMErunner is not a stream filter and work with static files on disk or RAM filesystems.
 
 Only MBOXO format is fully supported, but other formats should work fine in most real cases.
+
+MIMErunner may be useful for wire-speed processing, current performance is > 1 Gbit/s on single core (trsted on i7-3770 3.4 GHz).
 
 #Installation
 #Dependencies
