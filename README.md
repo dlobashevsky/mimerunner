@@ -39,11 +39,12 @@ Examples of usage may be found in 'examples/' folder.
 Standard BSD 3-clause
 
 #TODO
-BSON output.
-JSON output (with base64 encoded data).
-Filter expression support or embedded interpreter/JIT.
-Doxygen documentation.
+* autoconf.
+* BSON output.
+* JSON output (with base64 encoded data).
+* Filter expression support or embedded interpreter/JIT.
+* Doxygen documentation.
 
 #Known bugs
 Mailboxes exported from gmail have invalid time format, so integer timestamp may be invalid while textual timestamp extracted correctly.
-UUencoded parts/fields not supported
+UUencoded parts/fields not supported (yet).

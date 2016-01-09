@@ -3,10 +3,10 @@
 //! \file 
 //! mime parsing
 
-#include "hash/mime.cs.h"
-#include "hash/mime.enc.h"
-#include "hash/mime.fields.h"
-#include "hash/mime.types.h"
+#include "mimerun/mime.cs.h"
+#include "mimerun/mime.enc.h"
+#include "mimerun/mime.fields.h"
+#include "mimerun/mime.types.h"
 
 /* memory manager */
 

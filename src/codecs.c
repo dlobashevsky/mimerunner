@@ -7,8 +7,8 @@
 
 #include "mimerun.h"
 #include "codecs.h"
-#include "hash/mime.cs.h"
-#include "hash/mime.enc.h"
+#include "mimerun/mime.cs.h"
+#include "mimerun/mime.enc.h"
 
 // $Id$
 

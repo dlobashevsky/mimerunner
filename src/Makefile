@@ -1,6 +1,6 @@
 # $Id: Makefile 72 2015-06-21 13:13:49Z dima $
 
-NAME=mimerun
+NAME=mimerunner
 
 CC=gcc
 
@@ -12,9 +12,9 @@ MIME_FIELDS_SRC=../dicts/mime.fields
 MIME_ENC_SRC=../dicts/mime.encodings
 MIME_CS_SRC=../dicts/mime.charsets
 
-GP=hash/mime.types.gp hash/mime.types.0.gp hash/mime.fields.gp hash/mime.enc.gp hash/mime.cs.gp
+GP=mimerun/mime.types.gp mimerun/mime.types.0.gp mimerun/mime.fields.gp mimerun/mime.enc.gp mimerun/mime.cs.gp
 GPC=$(GP:.gp=.c)
-GENH=hash/mime.types.h hash/mime.fields.h hash/mime.enc.h hash/mime.cs.h
+GENH=mimerun/mime.types.h mimerun/mime.fields.h mimerun/mime.enc.h mimerun/mime.cs.h
 
 SRC= $(sort $(wildcard *.c) $(GPC))
 OBJS= $(SRC:.c=.o)
@@ -58,42 +58,47 @@ mimeinc.inc:	mimeinc.re2c
 	$(CC) -MM -MG $(CFLAGS) $< > $@
 
 
-hash/mime.types.gp hash/mime.types.0.gp: $(MIME_SRC)
-	../scripts/mime.sh $< hash/mime.types
+mimerun/mime.types.gp mimerun/mime.types.0.gp: $(MIME_SRC)
+	../scripts/mime.sh $< mimerun/mime.types
 
-hash/mime.fields.gp: $(MIME_FIELDS_SRC)
-	../scripts/fields.sh $< hash/mime.fields
+mimerun/mime.fields.gp: $(MIME_FIELDS_SRC)
+	../scripts/fields.sh $< mimerun/mime.fields
 
-hash/mime.cs.gp: $(MIME_CS_SRC)
-	../scripts/cs.sh $< hash/mime.cs
+mimerun/mime.cs.gp: $(MIME_CS_SRC)
+	../scripts/cs.sh $< mimerun/mime.cs
 
-hash/mime.enc.gp: $(MIME_ENC_SRC)
-	../scripts/enc.sh $< hash/mime.enc
+mimerun/mime.enc.gp: $(MIME_ENC_SRC)
+	../scripts/enc.sh $< mimerun/mime.enc
 
 
-hash/mime.types.c: hash/mime.types.gp
+mimerun/mime.types.c: mimerun/mime.types.gp
 	gperf -t -L ANSI-C -G -C -l -N mime_get -K name -I --ignore-case $^ > $@
 
-hash/mime.types.0.c: hash/mime.types.0.gp
+mimerun/mime.types.0.c: mimerun/mime.types.0.gp
 	gperf -t -L ANSI-C -G -C -l -N mime_get0 -K name -I --ignore-case $^ > $@
 
-hash/mime.fields.c: hash/mime.fields.gp
+mimerun/mime.fields.c: mimerun/mime.fields.gp
 	gperf -t -L ANSI-C -G -C -l -N mime_field -K name -I --ignore-case $^ > $@
 
-hash/mime.cs.c: hash/mime.cs.gp
+mimerun/mime.cs.c: mimerun/mime.cs.gp
 	gperf -t -L ANSI-C -G -C -l -N mime_cs -K name -I --ignore-case $^ > $@
 
-hash/mime.enc.c: hash/mime.enc.gp
+mimerun/mime.enc.c: mimerun/mime.enc.gp
 	gperf -t -L ANSI-C -G -C -l -N mime_enc -K name -I --ignore-case $^ > $@
 
 install: $(PROG) $(LIBNAME) $(NAME).h
 	test -d $(DEST) && install -Ds $(PROG) $(DEST)/bin/$(PROG) && \
   install -D -m 0644 $(LIBNAME) $(DEST)/lib/$(LIBNAME) && \
   install -D -m 0644 $(NAME).h $(DEST)/include/$(NAME).h && \
+  install -D -m 0644 mimerun/mime.cs.h  $(DEST)/include/mimerun/mime.cs.h && \
+  install -D -m 0644 mimerun/mime.enc.h  $(DEST)/include/mimerun/mime.enc.h && \
+  install -D -m 0644 mimerun/mime.fields.h  $(DEST)/include/mimerun/mime.fields.h && \
+  install -D -m 0644 mimerun/mime.types.h  $(DEST)/include/mimerun/mime.types.h && \
   install -D -m 0644 ../doc/$(NAME).1 $(DEST)/share/man/man1/$(NAME).1
 
+
 dist clean:
-	rm -fR $(OBJS) $(DFILES) $(LIBNAME) $(PROG) *.tmp *.tmp~ docs ../docs *.inc $(REC) hash/*
+	rm -fR $(OBJS) $(DFILES) $(LIBNAME) $(PROG) *.tmp *.tmp~ docs ../docs *.inc $(REC) mimerun/*
 
 ifeq (,$(findstring $(MAKECMDGOALS),dist clean depend doc docs))
 -include $(DFILES)
